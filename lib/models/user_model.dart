@@ -150,4 +150,8 @@ class UserModel extends ChangeNotifier {
   String? getId() {
     return firebaseUser?.uid;
   }
+
+  String? getUserName(){
+    return userData["name"];
+  }
 }

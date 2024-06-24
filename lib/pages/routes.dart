@@ -3,7 +3,8 @@ import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:mobirural/constants/appconstants.dart';
 import 'package:mobirural/services/map_service.dart';
-import 'package:mobirural/services/user_current_local.dart';
+import 'package:mobirural/utils/user_current_local.dart';
+import 'package:mobirural/widgets/appbar_edit.dart';
 
 class RouteScreen extends StatefulWidget {
   final List<LatLng> routePoints;
@@ -15,6 +16,7 @@ class RouteScreen extends StatefulWidget {
 }
 
 class _RouteScreenState extends State<RouteScreen> {
+  final Widget _appbaredit = const AppBarEdit(titleName: 'Rota até o destino');
   GoogleMapController? mapController;
   LatLng? userLocation;
   final Set<Marker> _markers = {};
@@ -47,7 +49,10 @@ class _RouteScreenState extends State<RouteScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Rota')),
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(60.0),
+        child: _appbaredit,
+      ),
       body: GoogleMap(
         polylines: {
           Polyline(

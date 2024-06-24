@@ -1,7 +1,7 @@
 import 'dart:math' show atan2, cos, pow, sin, sqrt;
 import 'package:geolocator/geolocator.dart';
 import 'package:mobirural/models/building_model.dart';
-import 'package:mobirural/services/user_current_local.dart';
+import 'package:mobirural/utils/user_current_local.dart';
 
 double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
   const double radius = 6371;

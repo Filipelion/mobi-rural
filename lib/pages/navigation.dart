@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:mobirural/constants/appconstants.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:mobirural/pages/addobstacles.dart';
+import 'package:mobirural/pages/obstaclesadd.dart';
 import 'package:mobirural/services/map_service.dart';
-import 'package:mobirural/services/user_current_local.dart';
+import 'package:mobirural/utils/user_current_local.dart';
 
 class NavigationScreen extends StatefulWidget {
   const NavigationScreen({super.key});

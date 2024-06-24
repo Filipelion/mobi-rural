@@ -3,6 +3,8 @@ import 'package:mobirural/constants/appconstants.dart';
 import 'package:mobirural/models/user_model.dart';
 import 'package:mobirural/pages/configuracoes.dart';
 import 'package:mobirural/pages/perfil_edit.dart';
+import 'package:mobirural/pages/reviewsforuser.dart';
+import 'package:mobirural/pages/obstacleforuser.dart';
 import 'package:provider/provider.dart';
 
 class PerfilScreen extends StatefulWidget {
@@ -13,6 +15,8 @@ class PerfilScreen extends StatefulWidget {
 }
 
 class _PerfilScreenState extends State<PerfilScreen> {
+  UserModel user = UserModel();
+  
   @override
   Widget build(BuildContext context) {
     Widget perfil = const SizedBox(
@@ -100,6 +104,54 @@ class _PerfilScreenState extends State<PerfilScreen> {
       ],
     );
 
+    Widget sinalizacoes = Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          foregroundColor: Colors.black,
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12.0),
+            side: const BorderSide(color: Colors.transparent),
+          ),
+        ),
+        onPressed: () {
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => const UserObstaclesScreen()));
+        },
+        child: const Text(
+          "Sinalizações",
+          style: TextStyle(fontSize: 16.0),
+        ),
+      ),
+    );
+
+    Widget avaliacoes = Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          foregroundColor: Colors.black,
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12.0),
+            side: const BorderSide(color: Colors.transparent),
+          ),
+        ),
+        onPressed: () {
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => UserReviewsScreen(userId: user.getId(),)));
+        },
+        child: const Text(
+          "Suas Avaliações",
+          style: TextStyle(fontSize: 16.0),
+        ),
+      ),
+    );
+
     Widget configuracoes = Padding(
       padding: const EdgeInsets.all(16.0),
       child: ElevatedButton(
@@ -165,7 +217,11 @@ class _PerfilScreenState extends State<PerfilScreen> {
           children: [
             perfil,
             meuPerfil,
+            const SizedBox(height: 10.0),
+            sinalizacoes,
+            avaliacoes,
             configuracoes,
+            const SizedBox(height: 15.0),
             exitButton,
           ],
         ));

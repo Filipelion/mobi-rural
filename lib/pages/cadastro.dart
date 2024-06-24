@@ -57,6 +57,7 @@ class _CadastroScreenState extends State<CadastroScreen> {
               child: const Center(
                 child: Icon(
                   Icons.chevron_left,
+                  semanticLabel: 'Voltar',
                   color: Colors.white,
                   size: 40.0,
                 ),

@@ -17,6 +17,7 @@ class _AppBarEditState extends State<AppBarEdit> {
       appBar: AppBar(
         title: Text(
           widget.titleName,
+          textAlign: TextAlign.center,
         ),
         backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
@@ -35,6 +36,7 @@ class _AppBarEditState extends State<AppBarEdit> {
             child: const Center(
               child: Icon(
                 Icons.chevron_left,
+                semanticLabel: 'Voltar',
                 color: Colors.white,
                 size: 40.0,
               ),

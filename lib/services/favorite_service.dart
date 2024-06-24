@@ -4,14 +4,20 @@ import 'package:mobirural/models/building_model.dart';
 class FavoriteService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  Future<void> addFavoriteBuilding(String? userId, String? buildingId) async {
+  Future<void> addFavoriteBuilding(String? userId, Building building) async {
     try {
       await _firestore
           .collection('users')
           .doc(userId)
           .collection('favorites')
-          .doc(buildingId)
-          .set({});
+          .doc(building.id)
+          .set({
+        "buildingReference": {
+          "id": building.id,
+          "name": building.name, 
+          "collection": "buildings",
+        }
+      });
     } catch (e) {
       rethrow;
     }
@@ -32,7 +38,7 @@ class FavoriteService {
 
   Future<bool> isBuildingFavorite(String userId, String buildingId) async {
     if (userId.isNotEmpty && buildingId.isNotEmpty) {
-      DocumentSnapshot doc = await FirebaseFirestore.instance
+      DocumentSnapshot doc = await _firestore
           .collection('users')
           .doc(userId)
           .collection('favorites')

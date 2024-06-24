@@ -4,12 +4,15 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:mobirural/constants/appconstants.dart';
 import 'package:mobirural/models/building_model.dart';
 import 'package:mobirural/models/user_model.dart';
+import 'package:mobirural/pages/review.dart';
+import 'package:mobirural/pages/reviewsforbuilding.dart';
 import 'package:mobirural/pages/routes.dart';
-import 'package:mobirural/services/accessibility_info.dart';
-import 'package:mobirural/services/directions.dart';
-import 'package:mobirural/services/distance_calculator.dart';
+import 'package:mobirural/services/buildingreview_service.dart';
+import 'package:mobirural/utils/accessibility_info.dart';
+import 'package:mobirural/utils/directions.dart';
+import 'package:mobirural/utils/distance_calculator.dart';
 import 'package:mobirural/services/favorite_service.dart';
-import 'package:mobirural/services/user_current_local.dart';
+import 'package:mobirural/utils/user_current_local.dart';
 import 'package:provider/provider.dart';
 
 class BuildingDetailsScreen extends StatefulWidget {
@@ -51,11 +54,22 @@ class _BuildingDetailsScreenState extends State<BuildingDetailsScreen> {
       await FavoriteService()
           .removeFavoriteBuilding(userId!, widget.building.id!);
     } else {
-      await FavoriteService().addFavoriteBuilding(userId!, widget.building.id!);
+      await FavoriteService().addFavoriteBuilding(userId!, widget.building);
     }
     setState(() {
       isFavorite = !isFavorite;
     });
+  }
+
+  Future<double> _getAverageRating() async {
+    try {
+      double averageRating = await BuildingReviewService()
+          .getAverageRatingForBuilding(widget.building.id ?? '');
+
+      return averageRating;
+    } catch (e) {
+      return 0.0; // Ou algum valor padrão em caso de erro
+    }
   }
 
   @override
@@ -84,6 +98,7 @@ class _BuildingDetailsScreenState extends State<BuildingDetailsScreen> {
                 Icons.chevron_left,
                 color: Colors.white,
                 size: 40.0,
+                semanticLabel: 'Voltar',
               ),
             ),
           ),
@@ -108,7 +123,7 @@ class _BuildingDetailsScreenState extends State<BuildingDetailsScreen> {
       children: [
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 20.0),
-          height: 200,
+          height: 190,
           child: Stack(
             alignment: Alignment.center,
             children: [
@@ -138,7 +153,7 @@ class _BuildingDetailsScreenState extends State<BuildingDetailsScreen> {
     Widget predio = Text(
       building.name ?? '',
       style: const TextStyle(
-        fontSize: 24.0,
+        fontSize: 22.0,
         fontWeight: FontWeight.bold,
       ),
       textAlign: TextAlign.center,
@@ -151,7 +166,7 @@ class _BuildingDetailsScreenState extends State<BuildingDetailsScreen> {
           return const Text(
             'Calculando distância...',
             style: TextStyle(
-                fontSize: 22.0,
+                fontSize: 20.0,
                 fontWeight: FontWeight.bold,
                 color: AppColors.primaryColor),
             textAlign: TextAlign.center,
@@ -160,17 +175,15 @@ class _BuildingDetailsScreenState extends State<BuildingDetailsScreen> {
           return Text(
             'Erro ao calcular distância: ${snapshot.error}',
             style: const TextStyle(
-                fontSize: 16.0,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textColor),
+                fontSize: 15.0, fontWeight: FontWeight.bold, color: Colors.red),
             textAlign: TextAlign.center,
           );
         } else if (snapshot.hasData) {
           double? distance = snapshot.data;
           return Text(
-            '${distance?.toStringAsFixed(2)} Km',
+            'distância: ${distance?.toStringAsFixed(2)} Km',
             style: const TextStyle(
-                fontSize: 22.0,
+                fontSize: 20.0,
                 fontWeight: FontWeight.bold,
                 color: AppColors.primaryColor),
             textAlign: TextAlign.center,
@@ -178,7 +191,7 @@ class _BuildingDetailsScreenState extends State<BuildingDetailsScreen> {
         } else {
           return const Text('Distância indisponível',
               style: TextStyle(
-                  fontSize: 22.0,
+                  fontSize: 20.0,
                   fontWeight: FontWeight.bold,
                   color: AppColors.primaryColor),
               textAlign: TextAlign.center);
@@ -186,8 +199,67 @@ class _BuildingDetailsScreenState extends State<BuildingDetailsScreen> {
       },
     );
 
+    Widget mediaAvaliacoes = FutureBuilder<double>(
+      future: _getAverageRating(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Text(
+            'Calculando média das avaliações...',
+            style: TextStyle(
+              fontSize: 15.0,
+              fontWeight: FontWeight.bold,
+              color: AppColors.primaryColor,
+            ),
+            textAlign: TextAlign.center,
+          );
+        } else if (snapshot.hasError) {
+          return Text(
+            'Erro ao calcular média das avaliações: ${snapshot.error}',
+            style: const TextStyle(
+              fontSize: 10.0,
+              fontWeight: FontWeight.bold,
+              color: Colors.red,
+            ),
+            textAlign: TextAlign.center,
+          );
+        } else if (snapshot.hasData) {
+          double averageRating = snapshot.data ?? 0.0;
+          return GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      ReviewsForBuildingScreen(building: building),
+                ),
+              );
+            },
+            child: Text(
+              'Média das avaliações: ${averageRating.toStringAsFixed(1)}',
+              style: const TextStyle(
+                fontSize: 15.0,
+                fontWeight: FontWeight.bold,
+                color: AppColors.primaryColor,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          );
+        } else {
+          return const Text(
+            'Média das avaliações indisponível',
+            style: TextStyle(
+              fontSize: 15.0,
+              fontWeight: FontWeight.bold,
+              color: AppColors.primaryColor,
+            ),
+            textAlign: TextAlign.center,
+          );
+        }
+      },
+    );
+
     Widget infos = Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(10.0),
         child: AccessibilityInfoWidget(
           specialParking: building.parking,
           accessRamps: building.accessRamps,
@@ -195,6 +267,25 @@ class _BuildingDetailsScreenState extends State<BuildingDetailsScreen> {
           adaptedBathroom: building.adaptedBathroom,
           tactilePaving: building.floor,
         ));
+
+    Widget avalia = Center(
+      child: GestureDetector(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ReviewScreen(building: building),
+            ),
+          );
+        },
+        child: const Text(
+          'Avalie este prédio',
+          style: TextStyle(
+            color: AppColors.primaryColor,
+          ),
+        ),
+      ),
+    );
 
     Widget guiar = Padding(
       padding: const EdgeInsets.all(20.0),
@@ -255,7 +346,9 @@ class _BuildingDetailsScreenState extends State<BuildingDetailsScreen> {
           const SizedBox(height: 5.0),
           predio,
           distancia,
+          mediaAvaliacoes,
           infos,
+          avalia,
           guiar,
         ],
       ),

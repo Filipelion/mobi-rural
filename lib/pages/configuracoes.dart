@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobirural/constants/appconstants.dart';
-import 'package:mobirural/pages/usersinalizations.dart';
+import 'package:mobirural/pages/obstacleforuser.dart';
 
 class ConfiguracoesPage extends StatelessWidget {
   

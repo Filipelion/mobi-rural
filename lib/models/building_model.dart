@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:mobirural/models/buildingreview_model.dart';
 
 class Building {
   String? id;
@@ -41,4 +42,26 @@ class Building {
       image: data['image'],
     );
   }
+
+  List<BuildingReview> reviews = [];
+
+  Map<String, dynamic> toMap() {
+    return {
+      'access_ramps': accessRamps,
+      'adapted_bathroom': adaptedBathroom,
+      'coordinates': coordinates,
+      'elevator': elevator,
+      'floor': floor,
+      'icon': icon,
+      'name': name,
+      'parking': parking,
+      'image': image,
+      'reviews': reviews.map((review) => review.toMap()).toList(),
+    };
+  }
+
+  void addReview(BuildingReview review) {
+    reviews.add(review);
+  }
 }
+
