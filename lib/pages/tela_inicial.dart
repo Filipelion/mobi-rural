@@ -16,6 +16,10 @@ class InicialScreen extends StatefulWidget {
 }
 
 class _InicialScreenState extends State<InicialScreen> {
+  List<Building>? allBuildings;
+  List<Building>? searchBuildings;
+  String searchText = "";
+
   @override
   void initState() {
     super.initState();
@@ -23,6 +27,25 @@ class _InicialScreenState extends State<InicialScreen> {
         overlays: [
           SystemUiOverlay.top,
         ]);
+
+    searchBuildings = [];
+  }
+
+  void _filterBuildings(String searchText) {
+    setState(() {
+      this.searchText = searchText;
+      if (searchText.isEmpty) {
+        searchBuildings = allBuildings;
+      } else {
+        List<Building> filtered = allBuildings
+                ?.where((building) => building.name!
+                    .toLowerCase()
+                    .contains(searchText.toLowerCase()))
+                .toList() ??
+            [];
+        searchBuildings = filtered.isEmpty ? allBuildings : filtered;
+      }
+    });
   }
 
   @override
@@ -37,13 +60,17 @@ class _InicialScreenState extends State<InicialScreen> {
       ),
       child: Stack(
         children: [
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 0.0, horizontal: 10.0),
+          Padding(
+            padding:
+                const EdgeInsets.symmetric(vertical: 0.0, horizontal: 10.0),
             child: TextField(
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 border: InputBorder.none,
                 hintText: 'Buscar',
               ),
+              onChanged: (String value) {
+                _filterBuildings(value);
+              },
             ),
           ),
           Positioned(
@@ -110,36 +137,43 @@ class _InicialScreenState extends State<InicialScreen> {
     }
 
     Widget colunadupla = FutureBuilder<List<Building>>(
-        future: buildingService.getBuildings(),
-        builder: (context, snapshot) {
-          switch (snapshot.connectionState) {
-            case ConnectionState.none:
-            case ConnectionState.waiting:
+      future: buildingService.getBuildings(),
+      builder: (context, snapshot) {
+        switch (snapshot.connectionState) {
+          case ConnectionState.none:
+          case ConnectionState.waiting:
+            return const Center(
+              child: CircularProgressIndicator(
+                color: AppColors.primaryColor,
+              ),
+            );
+
+          case ConnectionState.done:
+            if (snapshot.hasError) {
               return const Center(
-                child: CircularProgressIndicator(
-                  color: AppColors.primaryColor,
-                ),
+                child: Text('Erro ao carregar os dados dos prédios'),
               );
+            } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+              return const Center(
+                child: Text('Nenhum prédio encontrado'),
+              );
+            } else {
+              allBuildings = snapshot.data;
+              List<Building> displayedBuildings =
+                  (searchText.isEmpty || searchBuildings!.isEmpty)
+                      ? allBuildings!
+                      : searchBuildings!;
+              return buildGrid(displayedBuildings, context);
+            }
 
-            case ConnectionState.done:
-              //snapshot.data contém a lista de prédios recuperados
-              List<Building> buildings = snapshot.data!;
-              return buildGrid(buildings, context);
+          default:
+            return const Center(
+              child: Text('Nenhum prédio encontrado'),
+            );
+        }
+      },
+    );
 
-            default:
-              if (snapshot.hasError) {
-                return const Center(
-                  child: Text('Erro ao carregar os dados dos prédios'),
-                );
-              } else {
-                return const Center(
-                  child: Text('Nenhum prédio encontrado'),
-                );
-              }
-          }
-        });
-
-    // Widget botão flutuante
     Widget botaoFlutuante = Positioned(
       bottom: 85.0,
       right: 16.0,
@@ -153,7 +187,11 @@ class _InicialScreenState extends State<InicialScreen> {
           );
         },
         backgroundColor: AppColors.accentColor,
-        child: const Icon(Icons.add, size: 40.0, color: Colors.deepOrange,),
+        child: const Icon(
+          Icons.add,
+          size: 40.0,
+          color: Colors.deepOrange,
+        ),
       ),
     );
 

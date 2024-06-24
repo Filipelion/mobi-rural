@@ -10,6 +10,7 @@ import 'package:provider/provider.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
+    name: "mobi-rural2",
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
@@ -31,7 +32,7 @@ class App extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const MaterialApp(
-      title: 'Mobirural',
+      title: 'Mobirural2',
       home: InitScreen(),
       debugShowCheckedModeBanner: false,
     );

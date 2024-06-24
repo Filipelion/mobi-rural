@@ -30,8 +30,8 @@ class Building {
       return Building();
     }
     return Building(
-      accessRamps: data['access_ramps'],
-      adaptedBathroom: data['adapted_bathroom'],
+      accessRamps: data['accessRamps'],
+      adaptedBathroom: data['adaptedBathroom'],
       coordinates: data['coordinates'],
       elevator: data['elevator'],
       floor: data['floor'],

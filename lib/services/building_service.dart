@@ -63,8 +63,8 @@ class BuildingService extends ChangeNotifier {
   Future<void> updateBuilding(Building building) async {
     try {
       await _firestore.collection('buildings').doc(building.id).update({
-        'access_ramps': building.accessRamps,
-        'adapted_bathroom': building.adaptedBathroom,
+        'accessRamps': building.accessRamps,
+        'adaptedBathroom': building.adaptedBathroom,
         'coordinates': building.coordinates,
         'elevator': building.elevator,
         'floor': building.floor,

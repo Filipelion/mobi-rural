@@ -196,16 +196,15 @@ class _CadastroScreenState extends State<CadastroScreen> {
                         }
                       },
                       style: ButtonStyle(
-                        backgroundColor: MaterialStateProperty.all(
+                        backgroundColor: WidgetStateProperty.all(
                           AppColors.primaryColor,
                         ),
-                        shape:
-                            MaterialStateProperty.all<RoundedRectangleBorder>(
+                        shape: WidgetStateProperty.all<RoundedRectangleBorder>(
                           RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(20.0),
                           ),
                         ),
-                        padding: MaterialStateProperty.all<EdgeInsetsGeometry>(
+                        padding: WidgetStateProperty.all<EdgeInsetsGeometry>(
                           const EdgeInsets.symmetric(vertical: 10.0),
                         ),
                       ),
