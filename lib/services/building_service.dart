@@ -1,9 +1,13 @@
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:mobirural/models/building_model.dart';
+import 'package:mobirural/services/storage_service.dart';
 
 class BuildingService extends ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final StorageService _storageService = StorageService();
 
   Future<List<Building>> getBuildings() async {
     List<Building> buildings = [];
@@ -33,29 +37,46 @@ class BuildingService extends ChangeNotifier {
         DocumentSnapshot doc =
             await _firestore.collection('buildings').doc(id).get();
         if (doc.exists) {
-          buildings.add(Building.fromMap(doc.data() as Map<String, dynamic>?));
+          Building building =
+              Building.fromMap(doc.data() as Map<String, dynamic>?);
+          building.id = doc.id;
+          buildings.add(building);
         }
       }
       return buildings;
     } catch (e) {
+      debugPrint("Error fetching buildings by ids: $e");
       rethrow;
     }
   }
 
-  Future<void> createBuilding(Building building) async {
+  Future<void> createBuilding(
+      Building building, File? iconImage, File? buildingImage) async {
     try {
+      String? iconUrl;
+      String? buildingUrl;
+
+      if (iconImage != null) {
+        iconUrl = await _storageService.uploadImageToStorage(iconImage);
+      }
+
+      if (buildingImage != null) {
+        buildingUrl = await _storageService.uploadImageToStorage(buildingImage);
+      }
       await _firestore.collection('buildings').add({
-        'access_ramps': building.accessRamps,
-        'adapted_bathroom': building.adaptedBathroom,
+        'accessRamps': building.accessRamps,
+        'adaptedBathroom': building.adaptedBathroom,
         'coordinates': building.coordinates,
         'elevator': building.elevator,
         'floor': building.floor,
-        'icon': building.icon,
+        'icon': iconUrl,
         'name': building.name,
         'parking': building.parking,
-        'image': building.image,
+        'image': buildingUrl,
       });
+      notifyListeners();
     } catch (e) {
+      debugPrint("Error creating building: $e");
       rethrow;
     }
   }
@@ -73,7 +94,9 @@ class BuildingService extends ChangeNotifier {
         'parking': building.parking,
         'image': building.image,
       });
+      notifyListeners();
     } catch (e) {
+      debugPrint("Error updating building: $e");
       rethrow;
     }
   }
@@ -81,7 +104,9 @@ class BuildingService extends ChangeNotifier {
   Future<void> deleteBuilding(String buildingId) async {
     try {
       await _firestore.collection('buildings').doc(buildingId).delete();
+      notifyListeners();
     } catch (e) {
+      debugPrint("Error deleting building: $e");
       rethrow;
     }
   }
