@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:vibration/vibration.dart';
 import 'package:mobirural/constants/appconstants.dart';
 import 'package:mobirural/models/building_model.dart';
 import 'package:mobirural/models/user_model.dart';
@@ -16,6 +17,10 @@ class InicialScreen extends StatefulWidget {
 }
 
 class _InicialScreenState extends State<InicialScreen> {
+  List<Building>? allBuildings;
+  List<Building>? searchBuildings;
+  String searchText = "";
+
   @override
   void initState() {
     super.initState();
@@ -23,6 +28,69 @@ class _InicialScreenState extends State<InicialScreen> {
         overlays: [
           SystemUiOverlay.top,
         ]);
+
+    searchBuildings = [];
+  }
+
+  void _filterBuildings(String searchText) {
+    setState(() {
+      this.searchText = searchText;
+      if (searchText.isEmpty) {
+        searchBuildings = allBuildings;
+      } else {
+        List<Building> filtered = allBuildings
+                ?.where((building) => building.name!
+                    .toLowerCase()
+                    .contains(searchText.toLowerCase()))
+                .toList() ??
+            [];
+        searchBuildings = filtered.isEmpty ? allBuildings : filtered;
+      }
+    });
+  }
+
+  Future<void> _removeBuilding(Building building) async {
+    try {
+      final buildingService =
+          Provider.of<BuildingService>(context, listen: false);
+      await buildingService.deleteBuilding(building.id!);
+      setState(() {
+        allBuildings!.remove(building);
+        _filterBuildings(searchText);
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${building.name} removido com sucesso')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao remover o prédio: $e')),
+      );
+    }
+  }
+
+  Future<void> _confirmDelete(Building building) async {
+    bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirmação de Exclusão'),
+        content:
+            Text('Tem certeza que deseja excluir o prédio ${building.name}?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Não'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Sim'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      _removeBuilding(building);
+    }
   }
 
   @override
@@ -37,13 +105,17 @@ class _InicialScreenState extends State<InicialScreen> {
       ),
       child: Stack(
         children: [
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 0.0, horizontal: 10.0),
+          Padding(
+            padding:
+                const EdgeInsets.symmetric(vertical: 0.0, horizontal: 10.0),
             child: TextField(
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 border: InputBorder.none,
                 hintText: 'Buscar',
               ),
+              onChanged: (String value) {
+                _filterBuildings(value);
+              },
             ),
           ),
           Positioned(
@@ -103,43 +175,56 @@ class _InicialScreenState extends State<InicialScreen> {
           ),
           itemCount: buildings.length,
           itemBuilder: (context, index) {
-            return BuildingCard(building: buildings[index]);
+            return GestureDetector(
+              onLongPress: () {
+                Vibration.vibrate(duration: 50);
+                _confirmDelete(buildings[index]);
+              },
+              child: BuildingCard(building: buildings[index]),
+            );
           },
         ),
       );
     }
 
     Widget colunadupla = FutureBuilder<List<Building>>(
-        future: buildingService.getBuildings(),
-        builder: (context, snapshot) {
-          switch (snapshot.connectionState) {
-            case ConnectionState.none:
-            case ConnectionState.waiting:
+      future: buildingService.getBuildings(),
+      builder: (context, snapshot) {
+        switch (snapshot.connectionState) {
+          case ConnectionState.none:
+          case ConnectionState.waiting:
+            return const Center(
+              child: CircularProgressIndicator(
+                color: AppColors.primaryColor,
+              ),
+            );
+
+          case ConnectionState.done:
+            if (snapshot.hasError) {
               return const Center(
-                child: CircularProgressIndicator(
-                  color: AppColors.primaryColor,
-                ),
+                child: Text('Erro ao carregar os dados dos prédios'),
               );
+            } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+              return const Center(
+                child: Text('Nenhum prédio encontrado'),
+              );
+            } else {
+              allBuildings = snapshot.data;
+              List<Building> displayedBuildings =
+                  (searchText.isEmpty || searchBuildings!.isEmpty)
+                      ? allBuildings!
+                      : searchBuildings!;
+              return buildGrid(displayedBuildings, context);
+            }
 
-            case ConnectionState.done:
-              //snapshot.data contém a lista de prédios recuperados
-              List<Building> buildings = snapshot.data!;
-              return buildGrid(buildings, context);
+          default:
+            return const Center(
+              child: Text('Nenhum prédio encontrado'),
+            );
+        }
+      },
+    );
 
-            default:
-              if (snapshot.hasError) {
-                return const Center(
-                  child: Text('Erro ao carregar os dados dos prédios'),
-                );
-              } else {
-                return const Center(
-                  child: Text('Nenhum prédio encontrado'),
-                );
-              }
-          }
-        });
-
-    // Widget botão flutuante
     Widget botaoFlutuante = Positioned(
       bottom: 85.0,
       right: 16.0,
@@ -153,7 +238,11 @@ class _InicialScreenState extends State<InicialScreen> {
           );
         },
         backgroundColor: AppColors.accentColor,
-        child: const Icon(Icons.add, size: 40.0, color: Colors.deepOrange,),
+        child: const Icon(
+          Icons.add,
+          size: 40.0,
+          color: Colors.deepOrange,
+        ),
       ),
     );
 
