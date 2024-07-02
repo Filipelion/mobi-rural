@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:vibration/vibration.dart';
 import 'package:mobirural/constants/appconstants.dart';
 import 'package:mobirural/models/building_model.dart';
 import 'package:mobirural/models/user_model.dart';
@@ -46,6 +47,50 @@ class _InicialScreenState extends State<InicialScreen> {
         searchBuildings = filtered.isEmpty ? allBuildings : filtered;
       }
     });
+  }
+
+  Future<void> _removeBuilding(Building building) async {
+    try {
+      final buildingService =
+          Provider.of<BuildingService>(context, listen: false);
+      await buildingService.deleteBuilding(building.id!);
+      setState(() {
+        allBuildings!.remove(building);
+        _filterBuildings(searchText);
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${building.name} removido com sucesso')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao remover o prédio: $e')),
+      );
+    }
+  }
+
+  Future<void> _confirmDelete(Building building) async {
+    bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirmação de Exclusão'),
+        content:
+            Text('Tem certeza que deseja excluir o prédio ${building.name}?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Não'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Sim'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      _removeBuilding(building);
+    }
   }
 
   @override
@@ -130,7 +175,13 @@ class _InicialScreenState extends State<InicialScreen> {
           ),
           itemCount: buildings.length,
           itemBuilder: (context, index) {
-            return BuildingCard(building: buildings[index]);
+            return GestureDetector(
+              onLongPress: () {
+                Vibration.vibrate(duration: 50);
+                _confirmDelete(buildings[index]);
+              },
+              child: BuildingCard(building: buildings[index]),
+            );
           },
         ),
       );
