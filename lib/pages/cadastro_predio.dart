@@ -33,6 +33,7 @@ class _CreateBuildingState extends State<CreateBuilding> {
   File? _buildingImage;
 
   static final GeoPoint? _coordinates = GeoPoint(0.0, 0.0);
+  Future<void>? _saveBuildingFuture;
 
   @override
   Widget build(BuildContext context) {
@@ -58,7 +59,7 @@ class _CreateBuildingState extends State<CreateBuilding> {
             ),
             validator: (value) {
               if (value == null || value.isEmpty) {
-                return 'Campo obrigatório';
+                return 'Não se esqueça de nomear o prédio!';
               }
               return null;
             },
@@ -78,7 +79,7 @@ class _CreateBuildingState extends State<CreateBuilding> {
               _buildingImage = image;
             });
           }),
-          saveBuilding(),
+          _saveBuildingButton(),
         ],
       ),
     );
@@ -188,68 +189,112 @@ class _CreateBuildingState extends State<CreateBuilding> {
     );
   }
 
-  Widget saveBuilding() {
+  Widget _saveBuildingButton() {
     return Padding(
       padding: const EdgeInsets.all(20.0),
       child: SizedBox(
         width: double.infinity,
-        child: ElevatedButton(
-          onPressed: () async {
-            if (_formKey.currentState?.validate() ?? false) {
-              Building building = Building(
-                name: _nameBuilding.text,
-                parking: _disabilityParking.text,
-                accessRamps: _accessRamps.text,
-                elevator: _elevator.text,
-                floor: _floor.text,
-                adaptedBathroom: _adaptedBathroom.text,
-                icon: _iconImage?.path ?? '',
-                image: _buildingImage?.path ?? '',
-                coordinates:
-                    _coordinates, // Adicione as coordenadas aqui, se necessário
+        child: FutureBuilder<void>(
+          future: _saveBuildingFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            } else {
+              return ElevatedButton(
+                onPressed: () {
+                  if (_formKey.currentState?.validate() ?? false) {
+                    if (_validateImages()) {
+                      setState(() {
+                        _saveBuildingFuture = _saveBuilding();
+                      });
+                    }
+                  }
+                },
+                style: ButtonStyle(
+                  backgroundColor: WidgetStateProperty.all(
+                    AppColors.primaryColor,
+                  ),
+                  shape: WidgetStateProperty.all<RoundedRectangleBorder>(
+                    RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20.0),
+                    ),
+                  ),
+                  padding: WidgetStateProperty.all<EdgeInsetsGeometry>(
+                    const EdgeInsets.symmetric(vertical: 10.0),
+                  ),
+                ),
+                child: const Text(
+                  'Salvar',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16.0,
+                  ),
+                ),
               );
-
-              try {
-                await Provider.of<BuildingService>(context, listen: false)
-                    .createBuilding(building, _iconImage, _buildingImage);
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Prédio criado com sucesso!')),
-                  );
-                  Navigator.of(context).pop();
-                }
-              } catch (e) {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Erro ao criar o prédio: $e')),
-                  );
-                }
-              }
             }
           },
-          style: ButtonStyle(
-            backgroundColor: WidgetStateProperty.all(
-              AppColors.primaryColor,
-            ),
-            shape: WidgetStateProperty.all<RoundedRectangleBorder>(
-              RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20.0),
-              ),
-            ),
-            padding: WidgetStateProperty.all<EdgeInsetsGeometry>(
-              const EdgeInsets.symmetric(vertical: 10.0),
-            ),
-          ),
-          child: const Text(
-            'Salvar',
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 16.0,
-            ),
-          ),
         ),
       ),
     );
+  }
+
+  bool _validateImages() {
+    if (_iconImage == null || _buildingImage == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Ícone e imagem do prédio são obrigatórios'),
+        ),
+      );
+      return false;
+    }
+
+    final validExtensions = ['.jpg', '.png'];
+    final iconExtension = _iconImage?.path.split('.').last.toLowerCase();
+    final buildingExtension =
+        _buildingImage?.path.split('.').last.toLowerCase();
+
+    if (!validExtensions.contains('.$iconExtension') ||
+        !validExtensions.contains('.$buildingExtension')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Apenas são permitidos arquivos do tipo .JPG e .PNG'),
+        ),
+      );
+      return false;
+    }
+
+    return true;
+  }
+
+  Future<void> _saveBuilding() async {
+    Building building = Building(
+      name: _nameBuilding.text,
+      parking: _disabilityParking.text,
+      accessRamps: _accessRamps.text,
+      elevator: _elevator.text,
+      floor: _floor.text,
+      adaptedBathroom: _adaptedBathroom.text,
+      icon: _iconImage?.path ?? '',
+      image: _buildingImage?.path ?? '',
+      coordinates: _coordinates,
+    );
+
+    try {
+      await Provider.of<BuildingService>(context, listen: false)
+          .createBuilding(building, _iconImage, _buildingImage);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Prédio criado com sucesso!')),
+        );
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao criar o prédio: $e')),
+        );
+      }
+    }
   }
 }
