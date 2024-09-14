@@ -3,10 +3,12 @@ import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mobirural/models/building_model.dart';
 import 'package:mobirural/services/building_service.dart';
 import 'package:mobirural/constants/appconstants.dart';
+import 'package:mobirural/utils/user_current_local.dart';
 import 'package:mobirural/widgets/appbar_edit.dart';
 import 'package:provider/provider.dart';
 
@@ -32,8 +34,30 @@ class _CreateBuildingState extends State<CreateBuilding> {
   File? _iconImage;
   File? _buildingImage;
 
-  static final GeoPoint? _coordinates = GeoPoint(0.0, 0.0);
+  bool _useCurrentLocation = false;
+  GeoPoint? _coordinates = const GeoPoint(0.0, 0.0);
   Future<void>? _saveBuildingFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeLocationStatus();
+  }
+
+  Future<void> _initializeLocationStatus() async {
+    Position? position = await getCurrentLocation();
+    if (position != null) {
+      setState(() {
+        _useCurrentLocation = true;
+        _coordinates = GeoPoint(position.latitude, position.longitude);
+      });
+    } else {
+      setState(() {
+        _useCurrentLocation = false;
+        _coordinates = const GeoPoint(0.0, 0.0);
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -79,6 +103,7 @@ class _CreateBuildingState extends State<CreateBuilding> {
               _buildingImage = image;
             });
           }),
+          _getUserLocationCheckbox(),
           _saveBuildingButton(),
         ],
       ),
@@ -186,6 +211,56 @@ class _CreateBuildingState extends State<CreateBuilding> {
                 ],
               ),
       ],
+    );
+  }
+
+  Widget _getUserLocationCheckbox() {
+    return Padding(
+      padding: const EdgeInsets.all(20.0),
+      child: Row(
+        children: [
+          Checkbox(
+            value: _useCurrentLocation,
+            onChanged: (bool? value) async {
+              setState(() {
+                _useCurrentLocation = value ?? false;
+              });
+
+              if (_useCurrentLocation) {
+                Position? position = await getCurrentLocation();
+                if (position != null) {
+                  setState(() {
+                    _coordinates =
+                        GeoPoint(position.latitude, position.longitude);
+                  });
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                        content: Text('Localização obtida com sucesso!')),
+                  );
+                } else {
+                  setState(() {
+                    _coordinates = const GeoPoint(0.0, 0.0);
+                  });
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                        content: Text('Não foi possível obter a localização.')),
+                  );
+                }
+              } else {
+                setState(() {
+                  _coordinates = const GeoPoint(0.0, 0.0);
+                });
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                      content:
+                          Text('A localização será defenida posteriormente')),
+                );
+              }
+            },
+          ),
+          const Text('Usar minha localização atual'),
+        ],
+      ),
     );
   }
 
