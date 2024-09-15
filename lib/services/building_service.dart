@@ -17,9 +17,7 @@ class BuildingService extends ChangeNotifier {
           await _firestore.collection('buildings').get();
 
       for (var doc in querySnapshot.docs) {
-        Building building =
-            Building.fromMap(doc.data() as Map<String, dynamic>?);
-        building.id = doc.id;
+        Building building = Building.fromSnapshot(doc);
         buildings.add(building);
       }
 
@@ -37,9 +35,7 @@ class BuildingService extends ChangeNotifier {
         DocumentSnapshot doc =
             await _firestore.collection('buildings').doc(id).get();
         if (doc.exists) {
-          Building building =
-              Building.fromMap(doc.data() as Map<String, dynamic>?);
-          building.id = doc.id;
+          Building building = Building.fromSnapshot(doc);
           buildings.add(building);
         }
       }
@@ -81,7 +77,8 @@ class BuildingService extends ChangeNotifier {
     }
   }
 
-  Future<void> updateBuilding(Building building) async {
+  Future<void> updateBuilding(
+      Building building, File? iconImage, File? buildingImage) async {
     try {
       await _firestore.collection('buildings').doc(building.id).update({
         'accessRamps': building.accessRamps,
