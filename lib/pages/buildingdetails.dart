@@ -6,6 +6,7 @@ import 'package:mobirural/models/building_model.dart';
 import 'package:mobirural/models/user_model.dart';
 import 'package:mobirural/pages/review.dart';
 import 'package:mobirural/pages/reviewsforbuilding.dart';
+import 'package:mobirural/pages/edit_building.dart';
 import 'package:mobirural/pages/routes.dart';
 import 'package:mobirural/services/buildingreview_service.dart';
 import 'package:mobirural/utils/accessibility_info.dart';
@@ -68,7 +69,7 @@ class _BuildingDetailsScreenState extends State<BuildingDetailsScreen> {
 
       return averageRating;
     } catch (e) {
-      return 0.0; // Ou algum valor padrão em caso de erro
+      return 0.0;
     }
   }
 
@@ -118,6 +119,15 @@ class _BuildingDetailsScreenState extends State<BuildingDetailsScreen> {
       ),
     );
 
+    void editBuilding() {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => EditBuilding(building: widget.building),
+        ),
+      );
+    }
+
     Widget imagem = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -141,6 +151,44 @@ class _BuildingDetailsScreenState extends State<BuildingDetailsScreen> {
                         color: AppColors.primaryColor,
                       );
                     }
+                  },
+                ),
+              ),
+              Positioned(
+                top: 10,
+                right: 10,
+                child: IconButton(
+                  icon: const Icon(
+                    Icons.edit,
+                    color: Colors.white,
+                    size: 30.0,
+                    semanticLabel: 'Editar Prédio',
+                  ),
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return AlertDialog(
+                          title: const Text('Editar Prédio'),
+                          content: const Text('Deseja editar o prédio?'),
+                          actions: [
+                            TextButton(
+                              child: const Text('Cancelar'),
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                              },
+                            ),
+                            TextButton(
+                              child: const Text('Editar'),
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                                editBuilding();
+                              },
+                            ),
+                          ],
+                        );
+                      },
+                    );
                   },
                 ),
               ),
@@ -304,7 +352,6 @@ class _BuildingDetailsScreenState extends State<BuildingDetailsScreen> {
               List<LatLng> routePoints =
                   await routeService.getDirections(userLocation, destination);
 
-              // ignore: use_build_context_synchronously
               Navigator.push(
                 context,
                 MaterialPageRoute(
